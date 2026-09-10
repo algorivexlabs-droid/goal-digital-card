@@ -16,24 +16,27 @@ const CONFIG = {
   phoneMedical: "9334098595",
   whatsappMedical: "9334098595",
   phoneMedicalAlt: "9308057050",
-  addressMedical: "Memko More, Opp. Prabhatam Grand Mall, Dhaiya, Dhanbad",
+  addressMedical: "GOAL Empire — Memko More, Opp. Prabhatam Grand Mall, Dhaiya, Dhanbad",
 
   // Engineering Division (GOAL Empire)
-  phoneEngineering: "7488112425",
-  whatsappEngineering: "7488112425",
-  phoneEngineeringAlt: "9234300143",
-  addressEngineering: "P.J. Memko More, Dhaiya, Dhanbad",
+  phoneEngineering: "9334098595",
+  whatsappEngineering: "9334098595",
+  phoneEngineeringAlt: "9308057050",
+  addressEngineering: "GOAL Empire — Memko More, Opp. Prabhatam Grand Mall, Dhaiya, Dhanbad",
 
   // Online Review & Map URLs (Configurable)
-  googleReviewUrl: "", // Paste Google Business review shortlink here
-  googleMapsUrl: "https://maps.google.com/?q=GOAL+Coaching+Centre+Dhanbad", // Directions URL
-  prospectusUrl: "#programs", // Local anchor or external PDF link
+  googleReviewUrl: "https://search.google.com/local/writereview?placeid=ChIJkd4KCaO89jkR-5rBOe9yg3E", // Google Business review page
+  googleMapsUrl: "https://maps.app.goo.gl/nrwjSwJdJ8LpchpF6",
+  prospectusUrl: "https://drive.google.com/file/d/1rSO-aBlHHshFzRKpAUZy22W5R07CdKRy/view?usp=drive_link",
+  digitalCardUrl: "", // Leave empty to automatically use live deployed URL
   email: "dhanbad@goaleducation.com",
-  siteUrl: "" // Deployment origin for canonical/og:image metadata
+  siteUrl: "https://algorivexlabs-droid.github.io/goal-digital-card" // Deployment origin for canonical/og:image metadata
 };
 
-// Global Configurable Review URL
+// Global Configurable URLs
 const GOOGLE_REVIEW_URL = CONFIG.googleReviewUrl;
+const PROSPECTUS_URL = "https://drive.google.com/file/d/1rSO-aBlHHshFzRKpAUZy22W5R07CdKRy/view?usp=drive_link";
+const DIGITAL_CARD_URL = CONFIG.digitalCardUrl;
 
 /**
  * Helper: Strip non-numeric characters for phone/WhatsApp links
@@ -111,9 +114,20 @@ function applyConfiguration() {
 
   const reviewUrl = (GOOGLE_REVIEW_URL || "").trim();
   const mapsUrl = (CONFIG.googleMapsUrl || "").trim();
-  const prospectus = (CONFIG.prospectusUrl || "").trim() || "#programs";
+  const prospectus = (PROSPECTUS_URL || CONFIG.prospectusUrl || "").trim();
+  const applyProspectus = (id) => {
+    const el = document.getElementById(id);
+    if (!el || !prospectus) return;
+    el.href = prospectus;
+    el.target = "_blank";
+    el.rel = "noopener noreferrer";
+    el.removeAttribute("aria-disabled");
+  };
 
-  setLink("btnProspectus", prospectus, true);
+  applyProspectus("btnProspectus");
+  applyProspectus("pillProspectus");
+  applyProspectus("dockProspectus");
+
   setLink("btnMaps", mapsUrl, isSet(mapsUrl));
   setLink("callMedical", medicalTel, isSet(medicalTel));
   setLink("callEngineering", engineeringTel, isSet(engineeringTel));
@@ -121,23 +135,24 @@ function applyConfiguration() {
   setLink("waEngineering", engineeringWa, isSet(engineeringWa));
   setLink("btnWhatsapp", primaryWa, isSet(primaryWa));
   setLink("btnCall", primaryTel, isSet(primaryTel));
+  setLink("contactCall", primaryTel, isSet(primaryTel));
+  setLink("contactWa", primaryWa, isSet(primaryWa));
   setLink("waFloat", primaryWa, isSet(primaryWa));
   setLink("btnWaFinal", primaryWa, isSet(primaryWa));
 
-  // Google Review Button Handler
+  // Google Review Button — opens Google Maps review page in new tab, no WhatsApp
   const btnGoogleReview = document.getElementById("btnGoogleReview");
   if (btnGoogleReview) {
-    if (isSet(reviewUrl)) {
-      btnGoogleReview.href = reviewUrl;
+    const reviewTarget = (CONFIG.googleReviewUrl || "").trim();
+    if (reviewTarget) {
+      btnGoogleReview.href = reviewTarget;
+      btnGoogleReview.target = "_blank";
+      btnGoogleReview.rel = "noopener noreferrer";
       btnGoogleReview.removeAttribute("aria-disabled");
     } else {
-      // Graceful fallback to Dhanbad center WhatsApp when Google Review link is pending
-      const reviewFeedbackWa = buildWhatsAppUrl(
-        CONFIG.whatsappMedical || CONFIG.whatsappEngineering,
-        "Hello GOAL Dhanbad, I would like to share my review and feedback regarding our experience."
-      );
-      btnGoogleReview.href = reviewFeedbackWa || primaryWa;
-      btnGoogleReview.setAttribute("title", "Connect on WhatsApp to share your experience");
+      // URL not configured — disable button gracefully
+      btnGoogleReview.href = "#reviews";
+      btnGoogleReview.setAttribute("aria-disabled", "true");
     }
   }
 
@@ -315,6 +330,147 @@ function initEnquiryForm() {
   });
 }
 
+// ── SHARE DIGITAL CARD ENGINE ─────────────────────────────────
+const PRODUCTION_LIVE_URL = "https://algorivexlabs-droid.github.io/goal-digital-card/";
+
+function getDigitalCardUrl() {
+  if (typeof DIGITAL_CARD_URL === "string" && DIGITAL_CARD_URL.trim()) {
+    return DIGITAL_CARD_URL.trim();
+  }
+  if (typeof window !== "undefined" && window.location) {
+    const loc = window.location;
+    // When live on production host (GitHub Pages or custom domain)
+    if (loc.hostname && loc.hostname !== "localhost" && loc.hostname !== "127.0.0.1" && loc.protocol.startsWith("http")) {
+      return loc.origin + loc.pathname;
+    }
+  }
+  // Production fallback — NEVER returns localhost or repo URL
+  return PRODUCTION_LIVE_URL;
+}
+
+function getShareMessage() {
+  const url = getDigitalCardUrl();
+  return [
+    "🎓 *GOAL IIT–JEE & Medical Coaching Centre, Dhanbad*",
+    "",
+    "📖 Explore our Digital Card & Prospectus",
+    "⭐ Read / Share your genuine Google Review",
+    "🎓 Admission Enquiry",
+    "",
+    "🔗 View Digital Card:",
+    url
+  ].join("\n");
+}
+
+function getWhatsAppShareUrl() {
+  const phone = digitsOnly(CONFIG.whatsappMedical || CONFIG.whatsappEngineering);
+  const msg = getShareMessage();
+  if (phone) {
+    return "https://wa.me/" + phone + "?text=" + encodeURIComponent(msg);
+  }
+  return "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
+}
+
+function initShareFeature() {
+  const shareSheet = document.getElementById("shareSheet");
+  const shareClose = document.getElementById("shareClose");
+  const shareWhatsappLink = document.getElementById("shareWhatsappLink");
+  const btnCopyCardLink = document.getElementById("btnCopyCardLink");
+  const btnWebShare = document.getElementById("btnWebShare");
+  const copyNotification = document.getElementById("copyNotification");
+
+  if (btnWebShare && navigator.share) {
+    btnWebShare.style.display = "inline-flex";
+    btnWebShare.addEventListener("click", async () => {
+      try {
+        await navigator.share({
+          title: "GOAL IIT–JEE & Medical Coaching Centre, Dhanbad",
+          text: getShareMessage(),
+          url: getDigitalCardUrl()
+        });
+      } catch (_) {}
+    });
+  }
+
+  const openShareModal = () => {
+    if (shareWhatsappLink) {
+      shareWhatsappLink.href = getWhatsAppShareUrl();
+    }
+    if (copyNotification) copyNotification.textContent = "";
+    if (shareSheet) {
+      shareSheet.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const closeShareModal = () => {
+    if (shareSheet) {
+      shareSheet.hidden = true;
+      document.body.style.overflow = "";
+    }
+  };
+
+  if (shareClose) shareClose.addEventListener("click", closeShareModal);
+  if (shareSheet) {
+    shareSheet.addEventListener("click", (e) => {
+      if (e.target === shareSheet) closeShareModal();
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && shareSheet && !shareSheet.hidden) {
+      closeShareModal();
+    }
+  });
+
+  if (btnCopyCardLink) {
+    btnCopyCardLink.addEventListener("click", async () => {
+      const url = getDigitalCardUrl();
+      let copied = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        } catch (_) {}
+      }
+      if (!copied) {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          copied = document.execCommand("copy");
+        } catch (_) {}
+        document.body.removeChild(ta);
+      }
+
+      if (copyNotification) {
+        copyNotification.textContent = "Link copied successfully";
+        copyNotification.style.color = "var(--green-deep)";
+        setTimeout(() => {
+          if (copyNotification.textContent === "Link copied successfully") {
+            copyNotification.textContent = "";
+          }
+        }, 3500);
+      }
+    });
+  }
+
+  document.querySelectorAll(".js-share").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+      if (isMobile) {
+        window.open(getWhatsAppShareUrl(), "_blank", "noopener,noreferrer");
+      } else {
+        openShareModal();
+      }
+    });
+  });
+}
+
 // Initialize all features on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   applyConfiguration();
@@ -322,6 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initNavigationObserver();
   initEnquiryModal();
   initEnquiryForm();
+  initShareFeature();
 });
 
 // Run immediate config application
