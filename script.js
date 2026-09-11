@@ -339,8 +339,15 @@ function getDigitalCardUrl() {
   }
   if (typeof window !== "undefined" && window.location) {
     const loc = window.location;
-    // When live on production host (GitHub Pages or custom domain)
-    if (loc.hostname && loc.hostname !== "localhost" && loc.hostname !== "127.0.0.1" && loc.protocol.startsWith("http")) {
+    // Check if running on a live web host (not localhost, local IP, or file protocol)
+    if (
+      loc.protocol &&
+      loc.protocol.startsWith("http") &&
+      loc.hostname &&
+      loc.hostname !== "localhost" &&
+      loc.hostname !== "127.0.0.1" &&
+      loc.hostname !== "0.0.0.0"
+    ) {
       return loc.origin + loc.pathname;
     }
   }
@@ -351,30 +358,94 @@ function getDigitalCardUrl() {
 function getShareMessage() {
   const url = getDigitalCardUrl();
   return [
-    "🎓 *GOAL IIT–JEE & Medical Coaching Centre, Dhanbad*",
+    "🎓 GOAL IIT–JEE & Medical Coaching Centre, Dhanbad",
     "",
     "📖 Explore our Digital Card & Prospectus",
     "⭐ Read / Share your genuine Google Review",
     "🎓 Admission Enquiry",
     "",
-    "🔗 View Digital Card:",
-    url
+    "🔗 View Digital Card: " + url
   ].join("\n");
 }
 
-function getWhatsAppShareUrl() {
-  const phone = digitsOnly(CONFIG.whatsappMedical || CONFIG.whatsappEngineering);
-  const msg = getShareMessage();
-  if (phone) {
-    return "https://wa.me/" + phone + "?text=" + encodeURIComponent(msg);
+/**
+ * Validate and format recipient WhatsApp phone number.
+ * - Accept Indian 10-digit mobile numbers (automatically prepending 91).
+ * - Strip spaces, hyphens, and leading 0, 91, or +91.
+ * - Also allow international numbers formatted with '+' or valid international digits.
+ * - Returns formatted digits or null if invalid.
+ */
+function formatRecipientWhatsAppNumber(rawInput) {
+  const str = String(rawInput || "").trim();
+  if (!str) return null;
+
+  // International format with explicit leading '+'
+  if (str.startsWith("+")) {
+    const clean = digitsOnly(str);
+    if (!clean) return null;
+    // If Indian number entered as +91...
+    if (clean.startsWith("91")) {
+      const national = clean.slice(2);
+      if (/^[6-9]\d{9}$/.test(national) || /^\d{10}$/.test(national)) {
+        return "91" + national;
+      }
+      return null;
+    }
+    // Generic international format (E.164: 7 to 15 digits)
+    if (clean.length >= 7 && clean.length <= 15) {
+      return clean;
+    }
+    return null;
   }
-  return "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
+
+  // Extract all digits
+  let digits = digitsOnly(str);
+  if (!digits) return null;
+
+  // If Indian number with leading 0 (e.g. 09876543210 -> 11 digits)
+  if (digits.length === 11 && digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+  // If Indian number with leading 91 (e.g. 919876543210 -> 12 digits)
+  else if (digits.length === 12 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  }
+
+  // Standard Indian 10-digit mobile number
+  if (digits.length === 10) {
+    if (/^[6-9]\d{9}$/.test(digits) || /^\d{10}$/.test(digits)) {
+      return "91" + digits;
+    }
+    return null;
+  }
+
+  // Generic international digits directly without '+' (11-15 digits not starting with 91)
+  if (digits.length >= 11 && digits.length <= 15) {
+    return digits;
+  }
+
+  return null;
+}
+
+/**
+ * Dynamically construct WhatsApp sharing URL for a given recipient.
+ * Format: https://wa.me/<phonenumber>?text=<encoded-message>
+ * NEVER uses GOAL's own phone number.
+ */
+function buildWhatsAppShareUrl(recipientNumber) {
+  const cleanRecipient = digitsOnly(recipientNumber);
+  if (!cleanRecipient) return "";
+  const msg = getShareMessage();
+  return "https://wa.me/" + cleanRecipient + "?text=" + encodeURIComponent(msg);
 }
 
 function initShareFeature() {
   const shareSheet = document.getElementById("shareSheet");
   const shareClose = document.getElementById("shareClose");
-  const shareWhatsappLink = document.getElementById("shareWhatsappLink");
+  const shareCancelBtn = document.getElementById("shareCancelBtn");
+  const shareForm = document.getElementById("shareForm");
+  const sharePhoneInput = document.getElementById("sharePhoneInput");
+  const shareStatus = document.getElementById("shareStatus");
   const btnCopyCardLink = document.getElementById("btnCopyCardLink");
   const btnWebShare = document.getElementById("btnWebShare");
   const copyNotification = document.getElementById("copyNotification");
@@ -393,13 +464,15 @@ function initShareFeature() {
   }
 
   const openShareModal = () => {
-    if (shareWhatsappLink) {
-      shareWhatsappLink.href = getWhatsAppShareUrl();
-    }
+    if (sharePhoneInput) sharePhoneInput.value = "";
+    if (shareStatus) shareStatus.textContent = "";
     if (copyNotification) copyNotification.textContent = "";
     if (shareSheet) {
       shareSheet.hidden = false;
       document.body.style.overflow = "hidden";
+      setTimeout(() => {
+        if (sharePhoneInput) sharePhoneInput.focus();
+      }, 80);
     }
   };
 
@@ -408,9 +481,11 @@ function initShareFeature() {
       shareSheet.hidden = true;
       document.body.style.overflow = "";
     }
+    if (shareStatus) shareStatus.textContent = "";
   };
 
   if (shareClose) shareClose.addEventListener("click", closeShareModal);
+  if (shareCancelBtn) shareCancelBtn.addEventListener("click", closeShareModal);
   if (shareSheet) {
     shareSheet.addEventListener("click", (e) => {
       if (e.target === shareSheet) closeShareModal();
@@ -421,6 +496,44 @@ function initShareFeature() {
       closeShareModal();
     }
   });
+
+  if (sharePhoneInput) {
+    sharePhoneInput.addEventListener("input", () => {
+      if (shareStatus && shareStatus.textContent) {
+        shareStatus.textContent = "";
+      }
+    });
+  }
+
+  if (shareForm) {
+    shareForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const rawInput = sharePhoneInput ? sharePhoneInput.value : "";
+      const validNumber = formatRecipientWhatsAppNumber(rawInput);
+
+      if (!validNumber) {
+        if (shareStatus) {
+          shareStatus.textContent = "Please enter a valid WhatsApp number.";
+          shareStatus.style.color = "var(--red)";
+        }
+        if (sharePhoneInput) sharePhoneInput.focus();
+        return;
+      }
+
+      const shareUrl = buildWhatsAppShareUrl(validNumber);
+      if (!shareUrl) {
+        if (shareStatus) {
+          shareStatus.textContent = "Please enter a valid WhatsApp number.";
+          shareStatus.style.color = "var(--red)";
+        }
+        return;
+      }
+
+      if (shareStatus) shareStatus.textContent = "";
+      window.open(shareUrl, "_blank", "noopener,noreferrer");
+      closeShareModal();
+    });
+  }
 
   if (btnCopyCardLink) {
     btnCopyCardLink.addEventListener("click", async () => {
@@ -458,15 +571,11 @@ function initShareFeature() {
     });
   }
 
+  // Clicking "SHARE DIGITAL CARD" opens the recipient dialog on both mobile and desktop
   document.querySelectorAll(".js-share").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
-      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-      if (isMobile) {
-        window.open(getWhatsAppShareUrl(), "_blank", "noopener,noreferrer");
-      } else {
-        openShareModal();
-      }
+      openShareModal();
     });
   });
 }

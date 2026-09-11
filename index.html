@@ -294,26 +294,26 @@
         <p class="foot">GOAL IIT–JEE &amp; Medical Coaching Centre, Dhanbad</p>
 
         <!-- BOTTOM DOCK NAVIGATION -->
-        <nav class="dock" aria-label="Primary">
-          <a href="#home" data-nav="home" class="on">
+        <nav class="dock" aria-label="Primary navigation">
+          <a href="#home" data-nav="home" class="on" aria-label="Home">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 11.2 12 4.8l7.5 6.4V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.2h-3.6V20.5H6A1.5 1.5 0 0 1 4.5 19v-7.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-            <span>Home</span>
+            <span>HOME</span>
           </a>
           <a href="https://drive.google.com/file/d/1rSO-aBlHHshFzRKpAUZy22W5R07CdKRy/view?usp=drive_link" target="_blank" rel="noopener noreferrer" id="dockProspectus" aria-label="Open Digital Prospectus in new tab">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6.5h12v11H6z" stroke="currentColor" stroke-width="1.8"/><path d="M9 10h6M9 13.5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <span>Prospectus</span>
+            <span>PROSPECTUS</span>
           </a>
-          <a href="#reviews" data-nav="reviews">
+          <a href="#reviews" data-nav="reviews" aria-label="Google Reviews">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 4.8 1.9 5.4h5.6l-4.5 3.4 1.7 5.4L12 15.8 7.3 19l1.7-5.4-4.5-3.4h5.6L12 4.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-            <span>Reviews</span>
+            <span>REVIEWS</span>
           </a>
-          <a href="#admission" data-nav="admission">
+          <a href="#admission" data-nav="admission" aria-label="Admission Enquiry">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 12.2A3.4 3.4 0 1 0 12 5.4a3.4 3.4 0 0 0 0 6.8ZM5.2 19.2c.7-2.6 3.2-4.2 6.8-4.2s6.1 1.6 6.8 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <span>Admission</span>
+            <span>ADMISSION</span>
           </a>
-          <a href="#contact" data-nav="contact">
+          <a href="#contact" data-nav="contact" aria-label="Contact Information">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7.2 5.8h9.6A1.7 1.7 0 0 1 18.5 7.5v9a1.7 1.7 0 0 1-1.7 1.7H7.2A1.7 1.7 0 0 1 5.5 16.5v-9A1.7 1.7 0 0 1 7.2 5.8Z" stroke="currentColor" stroke-width="1.8"/><path d="m6.2 8.2 5.8 4.2 5.8-4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Contact</span>
+            <span>CONTACT</span>
           </a>
         </nav>
       </article>
@@ -363,21 +363,44 @@
       </div>
     </div>
 
-    <!-- SHARE DIGITAL CARD MODAL (DESKTOP & FALLBACK) -->
+    <!-- SHARE DIGITAL CARD MODAL -->
     <div class="sheet" id="shareSheet" hidden>
       <div class="sheet-box share-box" role="dialog" aria-modal="true" aria-labelledby="share-title">
         <button class="x" type="button" id="shareClose" aria-label="Close share dialog">✕</button>
         <p class="kicker">Share</p>
         <h2 id="share-title">Share Digital Card</h2>
-        <p class="sheet-sub">Share GOAL Coaching Centre Dhanbad prospectus with students, parents, and friends.</p>
-        
-        <div class="share-stack">
-          <a class="btn wa wide" id="shareWhatsappLink" href="#" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" class="btn-icon" aria-hidden="true"><path fill="currentColor" d="M12.04 4.5A7.46 7.46 0 0 0 4.6 11.9a7.4 7.4 0 0 0 1.12 3.93L4.5 19.5l3.76-1.18a7.5 7.5 0 0 0 3.78 1.02h.01A7.46 7.46 0 0 0 19.5 11.9 7.46 7.46 0 0 0 12.04 4.5Z"/></svg>
-            Share on WhatsApp
-          </a>
+        <p class="sheet-sub">Enter the WhatsApp number you want to send this digital card to.</p>
 
-          <button class="btn line wide" id="btnCopyCardLink" type="button">
+        <form id="shareForm" class="share-form" novalidate>
+          <label for="sharePhoneInput">
+            WhatsApp Number
+            <input
+              id="sharePhoneInput"
+              name="sharePhone"
+              type="tel"
+              inputmode="numeric"
+              autocomplete="tel"
+              placeholder="Enter 10-digit mobile number"
+              required
+            />
+          </label>
+          <p class="note" id="shareStatus" role="status" aria-live="polite"></p>
+
+          <div class="share-actions">
+            <button class="btn line" type="button" id="shareCancelBtn">Cancel</button>
+            <button class="btn wa" type="submit" id="shareSubmitBtn">
+              <svg viewBox="0 0 24 24" class="btn-icon" aria-hidden="true"><path fill="currentColor" d="M12.04 4.5A7.46 7.46 0 0 0 4.6 11.9a7.4 7.4 0 0 0 1.12 3.93L4.5 19.5l3.76-1.18a7.5 7.5 0 0 0 3.78 1.02h.01A7.46 7.46 0 0 0 19.5 11.9 7.46 7.46 0 0 0 12.04 4.5Z"/></svg>
+              Share on WhatsApp
+            </button>
+          </div>
+        </form>
+
+        <div class="share-divider" aria-hidden="true">
+          <span>OR</span>
+        </div>
+
+        <div class="share-secondary-stack">
+          <button class="btn ghost-dark wide" id="btnCopyCardLink" type="button">
             <svg viewBox="0 0 24 24" class="btn-icon" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copy Digital Card Link
           </button>
